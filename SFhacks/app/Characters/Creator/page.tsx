@@ -19,8 +19,12 @@ export default function ReceiverPage() {
         likes: "Sunlight, Flowers",
         traits: "Kind, Shy, Sensitive",
         name: "Freya Thistleburst",
-        image_source: "https://images.unsplash.com/photo-1634149136748-12fa81337188?q=80&w=3087&auto=format&fit=crop&ixlib=rb-3.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        image_source: ""
     };
+
+    if (!(searchParams.get('name') === null)) {
+        // this is were we fetch the basic info
+    } 
 
     const [pronouns, setPronouns] = useState(person.pronouns);
     const [weaknesses, setWeaknesses] = useState(person.strengths);
@@ -31,13 +35,42 @@ export default function ReceiverPage() {
     const [strength, setStrength] = useState(person.strengths);
     const [img_src, setImg_Src] = useState(person.image_source);
     const [description, setDescription] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const imageUrls = [
-        '/fairy_placeholder.png',
-        '/fairy_placeholder.png',
-        '/fairy_placeholder.png',
-        '/fairy_placeholder.png'
-      ];
+    const [imageUrl, setImgUrl] = useState("");
+
+    // image generator button 
+  const handleGeneration = async () => {
+    console.log('clicked');
+    const response = await fetch('https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer VZlLjrlTqebChSNFepvks5aJzIxfu5RF1wTNppYHGtphRdkp`,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({prompt: description})
+      });
+
+    const data = await response.json()
+    console.log(data)
+    setImgUrl(data[0].base64);
+    console.log(imageUrl)
+  };
+
+  // select image 
+  const selectImage = async () => {
+    setImg_Src(imageUrl)
+  }
+
+  // save character
+  const saveCharacter = async () => {
+    if (!(searchParams.get('name') === null)) {
+        // create 
+        return 
+    }
+    //update 
+  }
 
     return (
         <div className="w-full">
@@ -47,12 +80,12 @@ export default function ReceiverPage() {
             >
                 {"<< Characters"}
             </button>
-            <div className="mx-20 flex gap-4 w-4/5 my-20">
+            <div className="mx-20 flex gap-4 w-4/5 my-20 justify-center h-full">
                 <div className="w-1/3 flex flex-col" key="image">
                     <label className="text-black text-xl">Character</label>
                     <div key={name} className="border-dotted border-2 border-black min-w-[275px] h-[475px] text-center flex flex-col justify-between" onClick={() => {router.push(`/Characters/Creator?name=${encodeURIComponent(character.name)}`)}}>
                             <div className="relative w-full overflow-hidden" style={{ "height": "95%"}}>
-                                <Image src={img_src} alt={name} layout="fill" objectFit="cover" />
+                                {img_src != "" ? <Image src={`data:image/png;base64, ${img_src}`} alt={name} layout="fill" objectFit="cover" /> : <div/>}
                             </div>
                             <div>
                                 <div className="text-black">...............................................</div>
@@ -61,9 +94,9 @@ export default function ReceiverPage() {
                             </div>
                         </div>
                         <button className="mt-4 text-s self-center bg-white px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0 flex flex-row"><GiSaveArrow className="mr-2" style={{ transform: 'translateY(3px)' }}/> Save Changes</button>
-                        <span className="hidden md:flex flex-row items-center text-black text-l mb-8 hover:bg-gray-400 rounded-lg p-2 mt-10 self-center">
+                        <span className="hidden md:flex flex-row items-center text-black text-sm mb-8 hover:bg-gray-400 rounded-lg p-2 mt-20 self-center">
                             <GiTrashCan className="" style={{ transform: 'translateY(-3px)' }}/>
-                            <p>Characters</p>
+                            <p>Delete Character</p>
                         </span>
                     </div>
                 <div key="form" className="flex flex-col w-1/4" >
@@ -112,24 +145,22 @@ export default function ReceiverPage() {
                     
                 </div>
                 <div className="flex flex-col w-1/4 h-full" key="Image">
-    <label className="text-black text-xl">Images</label>
+    <label className="text-black text-xl">Portrait Image</label>
     <div className="flex flex-wrap items-start">
         <textarea
-            className="border border-black border-dotted outline-none bg-inherit px-4 py-4 flex-grow min-h-[100px]"
+            className="border border-black border-dotted outline-none bg-inherit px-4 py-4 flex-grow min-h-[150px]"
             placeholder="Describe the appearance of your character"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
         />
     </div>
-    <div className="grid grid-cols-2 gap-4 mt-5">
-        {/* Mapping over the imageUrls array */}
-        {imageUrls.map((url, index) => (
-            <div key={index} className="border border-gray-400">
-                <Image src={url} alt={`Image ${index + 1}`} width={300} height={200} />
-            </div>
-        ))}
+    <div className="border border-gray-400 mt-5 border-dotted border-2 ">
+        { imageUrl != "" ? <Image src={`data:image/png;base64, ${imageUrl}`} alt="Character Image" width={300} height={200}/> : <div/> }
     </div>
-    <button className="mt-4 text-s self-end bg-white px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0">Generate Again</button>
+    <div className="flex flex-row justify-evenly">
+    <button className="mt-4 text-s self-end bg-white px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0" onClick={handleGeneration}>Generate</button>
+         <button className="mt-4 text-s self-end bg-white px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0" onClick={selectImage}>Select</button>
+    </div>
 </div>
 
 

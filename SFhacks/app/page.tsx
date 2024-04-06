@@ -6,6 +6,7 @@ export default function Home() {
   return (
     <main className="flex flex-row h-full">
       <div className="w-1/4 h-full">
+        <div className="h-1/2"></div>
         <div className="flex flex-col" style={{ transform: 'translateX(50%)' }}>
           <Link href="/NewStory">
             <span className="hidden md:flex flex-row items-center text-black text-3xl mb-8 hover:bg-gray-400 rounded-lg p-2">
