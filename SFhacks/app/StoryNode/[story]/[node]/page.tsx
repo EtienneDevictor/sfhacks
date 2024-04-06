@@ -13,29 +13,6 @@ export default async function Page() {
   const node = await NodeApiService.findNodeById(nodeId);
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    // generate a new node with
-    const formData = new FormData(event.currentTarget);
-    fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.FIREWORKS_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "accounts/fireworks/models/mixtral-8x7b-instruct",
-        max_tokens: 4096,
-        top_p: 1,
-        top_k: 40,
-        presence_penalty: 0,
-        frequency_penalty: 0,
-        temperature: 0.6,
-        messages: [],
-      }),
-    })
-      .then((res) => res.json())
-      .then((json) => console.log(json));
   }
 
   // NOTE: temp for now:
@@ -108,7 +85,7 @@ export default async function Page() {
             <button
               type="submit"
               className="bg-white text-black px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0"
-              onsubmit={}
+              onSubmit={onSubmit}
             >
               Continue
             </button>
