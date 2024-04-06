@@ -16,11 +16,8 @@ const RootLayout: React.FC<{
         backgroundPosition: 'center', // Center the background image
         backgroundRepeat: 'no-repeat', // Prevent background image from repeating
         overflow: 'hidden', // Hide overflow to ensure the background image covers the entire viewport
-        margin: 0, // Remove default margin
-        display: 'flex', // Use flexbox to center the content vertically and horizontally
-        alignItems: 'center', // Center vertically
-        justifyContent: 'center', // Center horizontally
         height: '100vh', // Make sure the body covers the full viewport height
+        width: '100vw'
       }}>
         {children}
       </body>
