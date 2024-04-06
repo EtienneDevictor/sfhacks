@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "bson": "^6.6.0",
     "mongodb": "^6.5.0",
     "neurelo-sdk": "file:neurelo-sdk-typescript-cmt_eb22b2.tgz",
     "next": "14.1.4",

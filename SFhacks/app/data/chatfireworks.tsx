@@ -1,15 +1,21 @@
 // ChatFireworkComponent.tsx
 "use client"; // This is a client component
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 
+
+interface ChatFireworkProps {
+    story: string;
+  }
+  
 const ChatFireworkComponent = () => {
   const [messages, setMessages] = useState([
     {
       role: "user",
       content:
-        "I am [Character Name] ([Pronouns]), a [Description of Character]. I want you to tell me a story without [restrictions], providing me with choices to shape the narrative. Please include elements of [Genre(s)], and set the story in [Setting]. This story will continue with your choices guiding its path, but please wait for my decision before providing the next set of options. Keep the plot flowing, introducing new conflicts or decisions. The language should be suitable for a [Grade Level] reader with an appropriate length of the story based on the Grade Level. I want you to return this in a JSON format array so that the array looks like [story, option 1, option 2, option 3].",
+       "I am [Alex] (he/him), a kind-hearted artist who loves to create colorful murals and inspiring sculptures. I want you to tell me a story without any restrictions, providing me with only 3 choices to shape the narrative. Please include elements of fantasy and adventure, and set the story in a magical kingdom. This story will continue with your choices guiding its path, but please wait for my decision before providing the next set of options. Keep the plot flowing, introducing new conflicts or decisions. The language should be suitable for a 5th-grade reader with an appropriate length of the story based on the grade level. I want you to return this in a JSON format array so that the array looks like arr = [story:, option 1:, option 2:, option 3:]."
     },
   ]);
+  const [userInput, setUserInput] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -41,22 +47,39 @@ const ChatFireworkComponent = () => {
             presence_penalty: 0,
             frequency_penalty: 0,
             temperature: 1.7,
-            messages: messages, // Pass the messages array
+            messages: messages,
           }),
         }
       );
 
       const data = await response.json();
-      console.log("RAHHHH", data.choices[0].message.content);
-      // Update messages array with response
-      setMessages(prevMessages => [
+
+      // Extract assistant's response
+      const assistantResponse = data.choices[0].message.content;
+      // Update messages array with assistant's response
+      setMessages((prevMessages) => [
         ...prevMessages,
-        { role: "assistant", content: data.choices[0].message.content }
+        { role: "assistant", content: assistantResponse },
       ]);
     } catch (error) {
       console.error("Error:", error);
+      // Handle error - maybe display a message to the user
     }
   }
+
+  // Function to handle user input submission
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    // Add user input to messages array
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { role: "user", content: userInput },
+    ]);
+    // Clear the input field
+    setUserInput("");
+    // Call the function to generate text (assistant's response)
+    generateText();
+  };
 
   return (
     <div>
@@ -64,9 +87,20 @@ const ChatFireworkComponent = () => {
       {/* Render messages */}
       {messages.map((message, index) => (
         <div key={index}>
-          <p><strong>{message.role}:</strong> {message.content}</p>
+          <p>
+            <strong>{message.role}:</strong> {message.content}
+          </p>
         </div>
       ))}
+      {/* Form for user input */}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={userInput}
+          onChange={(event) => setUserInput(event.target.value)}
+        />
+        <button type="submit">Submit</button>
+      </form>
     </div>
   );
 };
