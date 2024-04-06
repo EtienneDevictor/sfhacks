@@ -8,7 +8,7 @@ async function generateText() {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer QPyCubvATFcJf4JPTlXF1QAA2qIfR8GocLkfWAgt1Wlivxkv'
+                'Authorization': 'Bearer ${process.env.FIREWORKS_API_KEY}'
             },
             body: JSON.stringify({
                 model: 'accounts/fireworks/models/mixtral-8x7b-instruct',
