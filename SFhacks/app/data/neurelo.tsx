@@ -1,21 +1,43 @@
-// Entirely unused at the moment, i just did data fetching in the pages themselves
 import { ObjectId } from "mongodb";
-import { StoryApiService, AvatarApiService } from "neurelo-sdk";
+import {
+  GlobalApiService,
+  StoryApiService,
+  AvatarApiService,
+  ReadingLevel,
+} from "neurelo-sdk";
 
-const addAvatar = async () => {
+function id() {
+  return new ObjectId().toHexString();
+}
+export const fetchAvatars = async () => {
   try {
-    const res = await AvatarApiService.createOneAvatar({
-      id: ObjectId.generate().toString(),
-      image_source: "https://example.com/image.jpg",
-      name: "John Doe",
-      skills: "skill1, skill2",
-      traits: "trait1,",
-      pronouns: "they_them",
-      dislikes: "dislike1,",
-      strengths: "strength1,",
-    });
-    console.log(res.data.data);
+    const res = await AvatarApiService.findAvatar(undefined);
+    return { data: res.data?.data || [], error: undefined };
   } catch (error) {
-    console.log(error);
+    return { data: [], error: error };
   }
+};
+
+export const fetchGlobal = async () => {
+  try {
+    const response = await GlobalApiService.findGlobal({ reading_level: true });
+    return { data: response.data?.data || [], error: undefined };
+  } catch (error) {
+    return { data: [], error: error };
+  }
+};
+
+export const fetchReadingLevel = async () => {
+  const data = await fetchGlobal();
+  return data.data[0]?.reading_level;
+};
+
+export const updateReadingLevel = async (newLevel: ReadingLevel) => {
+  const data = await fetchGlobal();
+  const res = await GlobalApiService.updateGlobalById(
+    data.data[0]?.id || "failed",
+    {
+      reading_level: newLevel,
+    },
+  );
 };
