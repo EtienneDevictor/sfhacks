@@ -108,7 +108,7 @@ export default async function Page() {
             <button
               type="submit"
               className="bg-white text-black px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0"
-              onsubmit={}
+              // onsubmit={}
             >
               Continue
             </button>

@@ -1,3 +1,7 @@
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { FormEvent } from "react";
 const axios = require('axios');
 
 // Function to generate text based on the prompt and model
@@ -20,7 +24,7 @@ async function generateText() {
                 temperature: 1.7,
                 messages: [{
                     role: 'user',
-                    content: 'Say this is a test'
+                    content: 'I am [Character Name] ([Pronouns]), a [Description of Character]. I want you to tell me a story without violence, providing me with choices to shape the narrative. Please include elements of [Genre(s)], and set the story in [Setting]. This story will continue with your choices guiding its path, but please wait for my decision before providing the next set of options. Keep the plot flowing, introducing new conflicts or decisions. The language should be suitable for a [Grade Level] reader.'
                 }]
             })
         });
