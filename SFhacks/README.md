@@ -2,6 +2,8 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
+Create your own `.env.local` from `.env.local.example` with a Fireworks API key and a Neurelo API key
+
 First, run the development server:
 
 ```bash
