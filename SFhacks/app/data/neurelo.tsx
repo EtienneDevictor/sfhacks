@@ -1,7 +1,6 @@
-const { ObjectId } = require("mongodb");
-const { AvatarApiService } = require("neurelo-sdk");
-// import { ObjectId } from "mongodb";
-// import { AvatarApiService } from "neurelo-sdk";
+// Entirely unused at the moment, i just did data fetching in the pages themselves
+import { ObjectId } from "mongodb";
+import { StoryApiService, AvatarApiService } from "neurelo-sdk";
 
 const addAvatar = async () => {
   try {
@@ -20,4 +19,3 @@ const addAvatar = async () => {
     console.log(error);
   }
 };
-addAvatar();
