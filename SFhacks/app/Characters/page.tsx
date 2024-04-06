@@ -1,21 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AvatarApiService } from "neurelo-sdk";
+import { fetchAvatars } from "../data/neurelo";
 
 export default async function CharacterSelect() {
   // Sample array of character data
 
-  const fetchAvatars = async () => {
-    try {
-      const res = await AvatarApiService.findAvatar(undefined);
-      console.log(res.data.data);
-      return { data: res.data?.data || [], error: undefined };
-    } catch (error) {
-      return { data: [], error: error };
-    }
-  };
-
-  var { data, error } = await fetchAvatars();
+  const { data, error } = await fetchAvatars();
   // const characters = [
   //     {
   //         backstory: "",

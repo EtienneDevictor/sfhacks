@@ -4,6 +4,7 @@ import {
   StoryApiService,
   AvatarApiService,
   ReadingLevel,
+  Avatar,
 } from "neurelo-sdk";
 
 function id() {
@@ -14,7 +15,7 @@ export const fetchAvatars = async () => {
     const res = await AvatarApiService.findAvatar(undefined);
     return { data: res.data?.data || [], error: undefined };
   } catch (error) {
-    return { data: [], error: error };
+    return { data: [] as Avatar[], error: error };
   }
 };
 
