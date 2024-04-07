@@ -257,10 +257,10 @@ export default async function Page({
           </div>
           <div className="flex flex-row justify-between items-center">
             <Link
-              href=""
+              href="/"
               className="px-4 py-2 rounded-full bg-gray-100 text-black shadow-black shadow-sm"
             >
-              -- Zoom Out
+              -- Go Home
             </Link>
             <button
               type="submit"

@@ -69,12 +69,7 @@ Always return 2 paragraphs, one with the continued story and one with the option
         role: "user",
         content: "Please begin the story for me.",
       },
-      image_source:
-        "https://plus.unsplash.com/premium_photo-1664970900224-6c67df73191a?q=80&w=2487&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" ||
-        (await promptSDXL(
-          (formData.get("prompt") as string) ||
-            "Generate a generic fantasy image",
-        )),
+      image_source: "fairy_placeholder.png",
       parent_node: new ObjectId().toHexString(),
       children: [],
     };
