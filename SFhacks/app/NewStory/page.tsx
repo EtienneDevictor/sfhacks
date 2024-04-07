@@ -1,22 +1,42 @@
 "use server";
 
 import Link from "next/link";
-import { Avatar, Story, Node } from "neurelo-sdk";
+import { redirect } from "next/navigation";
+import {
+  Avatar,
+  Story,
+  Node,
+  StoryApiService,
+  StoryCreateInput,
+  NodeApiService,
+  NodeCreateInput,
+  Message,
+} from "neurelo-sdk";
 import { ObjectId } from "bson";
-import { fetchAvatars, fetchGlobal, fetchReadingLevel } from "../data/neurelo";
-import { promptMixtral } from "../data/fireworks";
+import {
+  fetchAvatars,
+  fetchContentRestrictions,
+  fetchGlobal,
+  fetchReadingLevel,
+} from "../data/neurelo";
+import {
+  promptMixtral,
+  promptMixtralChain,
+  promptSDXL,
+} from "../data/fireworks";
 
 export default async function ReceiverPage() {
   const generateStory = async () => {};
   const { data, error } = await fetchAvatars();
   const avatars = data;
-  const reading_level = fetchGlobal();
+  const reading_level = await fetchReadingLevel();
   const placeholder = await promptMixtral(
     `Generate an idea for a fantasy story, make sure it's at a ${reading_level} reading level`,
     "Write your story here...",
     true,
   );
   const createStartingNode = async (formData: FormData) => {
+    "use server";
     const story: Story = {
       id: new ObjectId().toHexString(),
       title: "Title",
@@ -29,18 +49,87 @@ export default async function ReceiverPage() {
         story.avatars?.push(avatar.id || "failed");
       }
     }
+
     const startingNode: Node = {
       id: new ObjectId().toHexString(),
       prompt: {
         role: "system",
-        content: `I am [Character Name] ([Pronouns]), a [Description of Character]. I want you to tell me a story
-without [restrictions], about the following prompt: ${formData.get("prompt")}. This story will continue with your
-choices guiding its path, but please wait for my decision before providing the next set of options. Keep the plot
-flowing, introducing new conflicts or decisions. The language should be suitable for a ${await fetchReadingLevel()}
-reader. I want you to return this in a JSON format of {story: "story-string-here", options: ["option 1", "option 2",
-"option 3"]}.`,
+        content: `I want you to tell me a story without ${(
+          await fetchContentRestrictions()
+        )?.join(", ")}, about the following prompt:
+${formData.get("prompt")}. This story will have the following characters: ${story.avatars
+          ?.map((avatar) => JSON.stringify(avatar))
+          .join(
+            ", ",
+          )}. You will guide the story's path, and keep the plot flowing, introducing new conflicts or decisions. At each
+suitable conflict point you should stop and let the user respond. The language should be suitable for a ${await fetchReadingLevel()} reader. If the story stops being appropriate for the level, please give an option to end the story.
+I want you to return this in a JSON format of {story: "story-string-here", options: ["option 1", "option 2", "option
+3"]}.`,
       },
+      user_input: {
+        role: "user",
+        content: `Please begin the story for me.`,
+      },
+      image_source:
+        "https://plus.unsplash.com/premium_photo-1664970900224-6c67df73191a?q=80&w=2487&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" ||
+        (await promptSDXL(
+          (formData.get("prompt") as string) ||
+            "Generate a generic fantasy image",
+        )),
+      parent_node: new ObjectId().toHexString(),
+      children: [],
     };
+    story.starting_node = startingNode.id;
+
+    var firstStoryNode: Node = {
+      id: new ObjectId().toHexString(),
+      user_input: {
+        role: "user",
+        content: "",
+      },
+      image_source:
+        "https://plus.unsplash.com/premium_photo-1664970900224-6c67df73191a?q=80&w=2487&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" ||
+        (await promptSDXL(
+          (formData.get("prompt") as string) ||
+            "Generate a generic fantasy image",
+        )),
+      parent_node: new ObjectId().toHexString(),
+      children: [],
+    };
+    startingNode.children?.push(firstStoryNode.id || "failed");
+    const messages = [
+      startingNode.prompt,
+      startingNode.user_input,
+    ] as Message[];
+    await promptMixtralChain(messages);
+    firstStoryNode.prompt = messages[messages.length - 1];
+
+    const storyPromise = StoryApiService.createOneStory(
+      story as StoryCreateInput,
+    );
+    const startingNodePromise = NodeApiService.createOneNode(
+      startingNode as NodeCreateInput,
+      {
+        $scalars: true,
+        prompt: true,
+        user_input: true,
+      },
+    );
+
+    const firstStoryNodePromise = NodeApiService.createOneNode(
+      firstStoryNode as NodeCreateInput,
+      {
+        $scalars: true,
+        prompt: true,
+        user_input: true,
+      },
+    );
+    await Promise.all([
+      storyPromise,
+      startingNodePromise,
+      firstStoryNodePromise,
+    ]);
+    redirect(`/StoryNode/${story.id}/${firstStoryNode.id}`);
   };
 
   return (
@@ -82,7 +171,7 @@ reader. I want you to return this in a JSON format of {story: "story-string-here
                           type="checkbox"
                           id={avatar.id}
                           className="mx-4 h-full min-h-10 table-cell align-middle outline-black outline-1 accent-orange-900"
-                        />
+                        ></input>
                         <label
                           htmlFor={avatar.id}
                           className="h-full w-full table-cell align-middle font-bold"
@@ -96,13 +185,13 @@ reader. I want you to return this in a JSON format of {story: "story-string-here
               </div>
             </div>
           </div>
-          <input
+          <button
             type="submit"
             className="bg-white text-black px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0 flex"
           >
             {/* <GiOpenGate className="mr-1 translate-y-0.5" /> */} :: Start
             exploring... ::
-          </input>
+          </button>
         </div>
       </form>
     </div>

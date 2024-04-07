@@ -7,7 +7,6 @@ export default async function StorySelect() {
   const fetchStories = async () => {
     try {
       const res = await StoryApiService.findStory(undefined);
-      console.log(res.data.data);
       return { data: res.data?.data || [], error: undefined };
     } catch (error) {
       return { data: [], error: error };

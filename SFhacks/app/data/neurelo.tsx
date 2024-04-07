@@ -42,3 +42,18 @@ export const updateReadingLevel = async (newLevel: ReadingLevel) => {
     },
   );
 };
+
+export const fetchContentRestrictions = async () => {
+  const data = await fetchGlobal();
+  return data.data[0]?.content_restrictions;
+};
+const neverShow = ["gore", "cruel violence"];
+export const updateContentRestrictions = async (restrictions: string[]) => {
+  const data = await fetchGlobal();
+  const res = await GlobalApiService.updateGlobalById(
+    data.data[0]?.id || "failed",
+    {
+      content_restrictions: neverShow.concat(restrictions),
+    },
+  );
+};

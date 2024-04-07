@@ -1,28 +1,121 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import { FormEvent } from "react";
-import { StoryApiService, NodeApiService } from "neurelo-sdk";
+import { redirect } from "next/navigation";
+import {
+  Message,
+  StoryApiService,
+  NodeApiService,
+  NodeCreateInputPrompt,
+  Node,
+  NodeCreateInput,
+} from "neurelo-sdk";
+import { promptMixtralChain, promptSDXL } from "@/app/data/fireworks";
+import { ObjectId } from "bson";
 
 // TODO
-export default async function Page() {
-  const router = useRouter();
-  const storyId = router.query.story as string;
-  const nodeId = router.query.node as string;
+export default async function Page({
+  params,
+}: {
+  params: { story: string; node: string };
+}) {
+  // so we are currently filling out a node that has its prompt already filled in, it needs the user input tho
+  const storyId = params.story;
+  const nodeId = params.node;
   const story = await StoryApiService.findStoryById(storyId);
-  const node = await NodeApiService.findNodeById(nodeId);
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const storyData = story.data.data;
+  const currentNode = await NodeApiService.findNodeById(nodeId, {
+    $scalars: true,
+    prompt: true,
+    user_input: true,
+  });
+  const currentNodeData = currentNode.data.data;
+  const currentNodeJSON = JSON.parse(
+    currentNodeData.prompt?.content || "failed",
+  );
+
+  // gather all past messages
+  const messages: Message[] = [];
+  var node = await NodeApiService.findNodeById(
+    storyData.starting_node || "failed",
+    {
+      $scalars: true,
+      prompt: true,
+      user_input: true,
+    },
+  );
+  console.log(node);
+  while (
+    node.data.data.children !== undefined &&
+    node.data.data.children.length > 0
+  ) {
+    messages.push(
+      node.data.data.prompt as Message,
+      node.data.data.user_input as Message,
+    );
+    const nextNodeId = node.data.data.children[0];
+    node = await NodeApiService.findNodeById(nextNodeId || "failed", {
+      $scalars: true,
+      prompt: true,
+      user_input: true,
+    });
   }
+  console.log(messages);
+  // process the current prompt into options
+  const options =
+    JSON.parse(currentNodeData.prompt?.content || "failed").options || "failed";
+
+  const createNextNode = async (formData: FormData) => {
+    "use server";
+    const user_choice = options[Number(formData.get("option")) || 0];
+    messages.push({
+      role: "user",
+      content: user_choice,
+    });
+    await promptMixtralChain(messages);
+    const newNode: Node = {
+      children: [],
+      parent_node: currentNodeData.id || "failed",
+      id: new ObjectId().toHexString(),
+      user_input: {
+        role: "user",
+        content: options[Number(user_choice)],
+      },
+      prompt: messages[messages.length - 1],
+    };
+
+    newNode.image_source =
+      "ignore" ||
+      promptSDXL(
+        `Generate an image for this story: ${newNode.prompt?.content}`,
+      );
+    // create the new node so we can navigate to it
+    await NodeApiService.createOneNode(newNode as NodeCreateInput, {
+      $scalars: true,
+      prompt: true,
+      user_input: true,
+    });
+    // update the old one's children so we can get all the messages
+    await NodeApiService.updateNodeById(
+      currentNodeData.id || "failed",
+      {
+        children: [newNode.id || "failed"],
+      },
+      {
+        $scalars: true,
+        prompt: true,
+        user_input: true,
+      },
+    );
+    redirect(`/StoryNode/${storyId}/${newNode.id || "failed"}`);
+  };
 
   // NOTE: temp for now:
-  const options = ["hi", "2", "3"];
   return (
     <div className="h-full flex flex-row">
       <div className="w-3/4">
         <Image
           // TODO: add image src, maybe modify the gradient as well
-          src="/fairy_placeholder.png"
+          src="https://placekitten.com/200/300"
           alt="placeholder"
           className="relative object-cover h-full w-full right-0"
           style={{
@@ -38,18 +131,10 @@ export default async function Page() {
       </div>
       <div className="fixed w-1/3 h-full flex flex-col items-center text-black right-0 justify-between">
         {/* make a form with radio buttons for each option */}
-        <p className="m-8 h-full overflow-y-clip">
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime
-          mollitia, molestiae quas vel sint commodi repudiandae consequuntur
-          voluptatum laborum numquam blanditiis harum quisquam eius sed odit
-          fugiat iusto fuga praesentium optio, eaque rerum! Provident similique
-          accusantium nemo autem. Veritatis obcaecati tenetur iure eius earum ut
-          molestias architecto voluptate aliquam nihil, eveniet aliquid culpa
-          officia aut! Impedit sit sunt quaerat, odit, tenetur
-        </p>
+        <p className="m-8 h-full overflow-y-clip">{currentNodeJSON.story}</p>
         <form className="w-3/4 flex flex-col h-full pb-4 justify-end">
           <div className="border-black border-2 border-dotted rounded-md overflow-hidden mb-4 flex flex-col flex-grow justify-evenly">
-            {options.map((option, index) => {
+            {options.map((option: any, index: any) => {
               const str = index.toString();
               return (
                 <div
@@ -85,7 +170,7 @@ export default async function Page() {
             <button
               type="submit"
               className="bg-white text-black px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0"
-              onSubmit={onSubmit}
+              formAction={createNextNode}
             >
               Continue
             </button>
