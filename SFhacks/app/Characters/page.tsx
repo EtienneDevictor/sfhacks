@@ -36,11 +36,12 @@ export default async function CharacterSelect() {
   // ];
 
   return (
-    <main className="w-full h-full flex justify-center">
-      <Link className="absolute top-4 left-4 text-black px-4 py-2" href="/">
+    <main className="w-full h-full flex flex-col justify-center">
+      <Link className="absolute top-4 left-4 text-black px-4" href="/">
         {"<< Home"}
       </Link>
-      <div className="mx-20 flex flex-nowrap overflow-x-auto gap-4 items-center">
+      <h2 className="self-center text-3xl mb-10">:: Your Characters ::</h2>
+      <div className="mx-20 flex flex-nowrap overflow-x-auto gap-4 self-center items-center">
         {data.map((character) => (
           <Link
             key={character.name}

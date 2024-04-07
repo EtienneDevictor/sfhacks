@@ -6,6 +6,7 @@ import {
   AvatarApiService,
   ReadingLevel,
   Avatar,
+  Story,
 } from "neurelo-sdk";
 
 import { S3Client } from '@aws-sdk/client-s3'
@@ -112,3 +113,12 @@ export const updateContentRestrictions = async (restrictions: string[]) => {
     },
   );
 };
+
+export const fetchStories = async () => {
+  try {
+    const res = await StoryApiService.findStory(undefined);
+    return { data: res.data?.data || [], error: undefined };
+  } catch (error) {
+    return { data: [] as Story[], error: error };
+  }
+}

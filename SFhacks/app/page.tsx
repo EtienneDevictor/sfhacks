@@ -26,6 +26,11 @@ export default function Home() {
               <p>Characters</p>
             </span>
           </Link>
+          <Link href="/Settings" style={{ transform: 'translateX(160px)' }}>
+            <span className="hidden md:flex flex-row items-center text-black text-base mb-8 hover:bg-gray-400 rounded-lg p-2">
+              <p>{"For Parents >>"}</p>
+            </span>
+          </Link>
         </div>
       </div>
       <div className="relative h-full w-3/4 flex justify-center items-center" style={{
@@ -38,7 +43,15 @@ export default function Home() {
         maskRepeat: "no-repeat",
         maskSize: "contain",
       }}>
-        <h1 className="text-4xl font-bold text-white" style={{ transform: 'translateY(160px)' }}>:: Your Story :: </h1>
+        <div className="flex flex-col items-center justify-center">
+  <h1 className="text-5xl font-bold text-white" style={{ transform: 'translateY(170px)' }}>
+    :: storycraft ::
+  </h1>
+  <h2 className="text-l font-bold text-white mt-5" style={{ transform: 'translateY(160px)' }}>
+    What will your story be?
+  </h2>
+</div>
+
       </div>
     </main>
   );
