@@ -11,6 +11,7 @@ import {
 } from "neurelo-sdk";
 import { promptMixtralChain, promptSDXL } from "@/app/data/fireworks";
 import { ObjectId } from "bson";
+import { getSignedUploadUrl } from "@/app/data/neurelo";
 
 // TODO
 export default async function Page({
@@ -83,11 +84,45 @@ export default async function Page({
       prompt: messages[messages.length - 1],
     };
 
-    newNode.image_source =
-      "ignore" ||
-      promptSDXL(
-        `Generate an image for this story: ${newNode.prompt?.content}`,
-      );
+    const base64 = await promptSDXL(`Generate an image for this story: ${newNode.prompt?.content}`)
+    
+    // converting Base64 to blob
+    function getFileFromBase64(string64:string) {
+      const trimmedString = string64.replace('data:image/png;base64', '');
+      const imageContent = Buffer.from(trimmedString, 'base64');
+      const view = new Uint8Array(imageContent);
+    
+      const type = 'image/png';
+
+      const blob = new Blob([view], { type });
+
+      return blob
+  }
+
+  const imageBlob = getFileFromBase64(base64)
+  const filepath = `${newNode.id}.png`
+  const presigned = await getSignedUploadUrl(filepath)
+
+  const form_data = new FormData();
+  Object.keys(presigned.fields).forEach(key => {
+    formData.append(key, presigned.fields[key]);
+  });
+  // Actual file has to be appended last.
+  formData.append("file", imageBlob);
+
+  // sending to s3 bucket 
+  await fetch(presigned.url, {
+      method: 'POST',
+      body:form_data,
+      // mode: 'no-cors',
+      // headers: {
+      //     'Content-Type': 'multipart/form-data'
+      // }
+  })
+
+
+    newNode.image_source = filepath
+
     // create the new node so we can navigate to it
     await NodeApiService.createOneNode(newNode as NodeCreateInput, {
       $scalars: true,
