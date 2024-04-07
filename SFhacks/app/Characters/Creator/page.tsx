@@ -38,6 +38,7 @@ export default function ReceiverPage() {
                     if (error) {
                         throw new Error('Error fetching avatar');
                     }
+                    console.log(data);
                     setPronouns(data.pronouns || "")
                     setWeaknesses(data.weaknesses || "")
                     setStrength(data.strengths || "")
@@ -45,6 +46,7 @@ export default function ReceiverPage() {
                     setDislikes(data.dislikes || "")
                     setLikes(data.likes || "")
                     setName(data.name || "")
+                    setImg_Src(data.image_source || "")
                     setImgUrl(data.image_source || "")
                     console.log("done setting")
                 } catch (error) {

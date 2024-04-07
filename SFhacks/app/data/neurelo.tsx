@@ -7,6 +7,7 @@ import {
   ReadingLevel,
   Avatar,
   Story,
+  GlobalCreateInputContentRestrictions,
 } from "neurelo-sdk";
 
 import { S3Client } from '@aws-sdk/client-s3'
@@ -122,3 +123,16 @@ export const fetchStories = async () => {
     return { data: [] as Story[], error: error };
   }
 }
+
+export const updateGlobal = async (reading: ReadingLevel, content: GlobalCreateInputContentRestrictions) => {
+  const data = await fetchGlobal();
+  const res = await GlobalApiService.updateGlobalById(
+    data.data[0]?.id || "failed",
+    {
+      reading_level: reading,
+      content_restrictions: content
+    },
+  );
+};
+
+
