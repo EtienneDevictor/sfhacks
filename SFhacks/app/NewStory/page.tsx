@@ -11,6 +11,7 @@ import {
   NodeApiService,
   NodeCreateInput,
   Message,
+  AvatarApiService,
 } from "neurelo-sdk";
 import { ObjectId } from "bson";
 import {
@@ -52,16 +53,26 @@ export default async function ReceiverPage() {
       }
     }
 
+    const avatar_nodes = story.avatars?.map(async (avatarId) => {
+      const avatar: Avatar = await AvatarApiService.findAvatarById(
+        avatarId,
+      ).then((res: any) => res.data.data);
+      return JSON.stringify(avatar);
+    });
+    var avatars_descriptions = [""];
+    if (typeof avatars_descriptions !== "undefined") {
+      avatars_descriptions = await Promise.all(
+        avatar_nodes as Promise<string>[],
+      );
+    }
+    var avatars_summary = avatars_descriptions.join(", ");
+
     const startingNode: Node = {
       id: new ObjectId().toHexString(),
       prompt: {
         role: "system",
         content: `I want you to tell me a story without brutal violence or drugs, about the following prompt:
-${formData.get("prompt")}. This story will have the following characters: ${story.avatars
-          ?.map((avatar) => JSON.stringify(avatar))
-          .join(
-            ", ",
-          )}. You will guide the story's path, and keep the plot flowing, introducing new conflicts or decisions. At each
+${formData.get("prompt")}. This story will have the following characters: ${avatars_descriptions}. You will guide the story's path, and keep the plot flowing, introducing new conflicts or decisions. At each
 suitable conflict point you should stop and let the user respond. The language should be suitable for a ${await fetchReadingLevel()} reader. If the story stops being appropriate for the level, please give an option to end the story.
 Always return 2 paragraphs, one with the continued story and one with the options for the user.`,
       },
@@ -184,9 +195,9 @@ Always return 2 paragraphs, one with the continued story and one with the option
               <textarea
                 className="w-full h-2/3 border-orange-950 border-2 border-dashed rounded-md bg-transparent p-4 bg-gray-200"
                 id="prompt"
-              >
-                {placeholder}
-              </textarea>
+                name="prompt"
+                defaultValue={placeholder}
+              ></textarea>
             </div>
             <div className="flex-col w-1/3 pr-20">
               <div className="text-3xl flex items-center gap-1 my-4">
@@ -205,6 +216,7 @@ Always return 2 paragraphs, one with the continued story and one with the option
                         <input
                           type="checkbox"
                           id={avatar.id}
+                          name={avatar.id}
                           className="mx-4 h-full min-h-10 table-cell align-middle outline-black outline-1 accent-orange-900"
                         ></input>
                         <label

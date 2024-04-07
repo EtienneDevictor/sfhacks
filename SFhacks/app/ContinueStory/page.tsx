@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { fetchStories } from "../data/neurelo";
-import { NodeApiService } from "neurelo-sdk";
+import { NodeApiService, StoryApiService } from "neurelo-sdk";
 import { summarizeNode } from "../data/fireworks";
 
 export default async function Stories() {
@@ -9,31 +9,35 @@ export default async function Stories() {
 
   const nodes = await Promise.all(
     data.map(async (story) => {
-      // if (story.title === "Title") {
-      //
-      // }
-      const node = await NodeApiService.findNodeById(
-        story.starting_node || "failed",
-        {
-          $scalars: true,
-          prompt: true,
-          user_input: true,
-        },
-      );
-      const res = node.data.data;
-      const child = await NodeApiService.findNodeById(
-        res.children[0] || "failed",
-        {
-          $scalars: true,
-          prompt: true,
-          user_input: true,
-        },
-      );
-      const childRes = child.data.data;
+      if (story.title === "Title") {
+        const node = await NodeApiService.findNodeById(
+          story.starting_node || "failed",
+          {
+            $scalars: true,
+            prompt: true,
+            user_input: true,
+          },
+        );
+        const res = node.data.data;
+        const child = await NodeApiService.findNodeById(
+          res.children[0] || "failed",
+          {
+            $scalars: true,
+            prompt: true,
+            user_input: true,
+          },
+        );
+
+        const childRes = child.data.data;
+        await StoryApiService.updateStoryById(story.id || "failed", {
+          title: await summarizeNode(childRes),
+          image_source: childRes.image_source,
+        });
+      }
 
       return {
-        title: await summarizeNode(childRes),
-        image: childRes.image_source,
+        title: story.title,
+        image: story.image_source,
       };
     }),
   );
@@ -48,7 +52,7 @@ export default async function Stories() {
         {nodes.map((node) => (
           <div
             key={node.title}
-            className="min-w-[275px] h-[475px] text-center flex flex-col justify-between border-dotted border-2 border-black"
+            className="w-[275px] h-[475px] text-center justify-between border-dotted border-2 border-black overflow-hidden relative"
           >
             <Link
               href={`/Characters/Creator?name=${encodeURIComponent(node.title || "failed to load")}`}
@@ -57,20 +61,21 @@ export default async function Stories() {
               {" "}
               {/* Change this link to the story page */}
               <Image
-                className="h-[155%]"
+                fill
+                className="h-full w-auto"
                 src={node.image || "/fairy_placeholder.png"}
                 alt={node.title || "failed"}
-                width={275}
-                height={475}
                 objectFit="cover"
               />
             </Link>
-            <div>
+            <div className="absolute bottom-[0%] w-full bg-gradient-to-t from-amber-100 from-80% to-transparent to-100% flex flex-col align-center items-center">
               <div className="text-black">
                 ...............................................
               </div>
-              <p className="text-lg text-black font-bold pt-2">
-                :: {node.title} ::
+              <p className="text-lg flex text-black font-bold pt-2 w-[90%]">
+                <p>::</p>
+                <p className="mx-2"> {node.title} </p>
+                <p>::</p>
               </p>
               <div className="text-black">
                 ...............................................

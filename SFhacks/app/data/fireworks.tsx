@@ -142,8 +142,8 @@ export async function summarizeNode(node: Node) {
         top_k: 40,
         presence_penalty: 0,
         frequency_penalty: 0,
-        temperature: 0.1,
-        prompt: `Give a short title for the following text: ${node.prompt?.content}`,
+        temperature: 0.2,
+        prompt: `Create a short title for the following text without a label: ${node.prompt?.content}`,
       }),
     },
   );

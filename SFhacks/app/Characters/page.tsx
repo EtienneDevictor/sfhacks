@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AvatarApiService } from "neurelo-sdk";
 import { fetchAvatars } from "../data/neurelo";
+import { GiHeartPlus } from "react-icons/gi";
 
 export default async function CharacterSelect() {
   // Sample array of character data
@@ -57,15 +58,20 @@ export default async function CharacterSelect() {
                 alt={character.name || "failed"}
                 layout="fill"
                 objectFit="cover"
+                style={{
+                  maskImage:
+                    "linear-gradient(to bottom, rgba(0, 0, 0, 1.0) 80%, transparent 100%)",
+                  maskRepeat: "no-repeat",
+                  maskSize: "contain",
+                }}
               />
             </div>
             <div>
               <div className="text-black">
                 ...............................................
               </div>
-              <p className="text-lg text-black font-bold pt-2">
-                {" "}
-                :: {character.name} ::{" "}
+              <p className="text-2xl text-black font-bold pt-2">
+                :: {character.name} ::
               </p>
               <div className="text-black">
                 ...............................................
@@ -74,21 +80,21 @@ export default async function CharacterSelect() {
           </Link>
         ))}
         <Link
-          className="border-dotted border-2 border-black min-w-[275px] h-[475px] text-center flex flex-col justify-center hover:bg-gray-400"
+          className="border-dotted border-2 border-black min-w-[275px] h-[475px] text-center flex flex-col justify-center hover:bg-gray-400 align-middle items-center"
           href="/Characters/Creator"
         >
           <div style={{ transform: "translateY(-65%)" }}>
             <div className="text-black">
               ...............................................
             </div>
-            <p className="text-lg text-black font-bold pt-2">
-              {" "}
-              + Create New Character +{" "}
+            <p className="text-xl text-black font-bold pt-2">
+              :: Create A Character ::
             </p>
             <div className="text-black">
               ...............................................
             </div>
           </div>
+          <GiHeartPlus size={100} className="translate-y-8" />
         </Link>
       </div>
     </main>

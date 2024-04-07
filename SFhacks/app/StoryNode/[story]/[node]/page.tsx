@@ -201,6 +201,9 @@ export default async function Page({
     redirect(`/StoryNode/${storyId}/${newNode.id || "failed"}`);
   };
 
+  const story_has_no_choices = options[0].trim() === "";
+  // just assume it ends for now
+
   // NOTE: temp for now:
   return (
     <div className="h-full flex flex-row">
@@ -226,9 +229,13 @@ export default async function Page({
       </div>
       <div className="fixed w-1/3 h-full flex flex-col items-center text-black right-0 justify-between">
         {/* make a form with radio buttons for each option */}
-        <p className="m-8 h-full overflow-y-scroll">{story}</p>
-        <form className="w-3/4 flex flex-col h-full pb-4 justify-end">
-          <div className="border-black border-2 border-dotted rounded-md overflow-hidden mb-4 flex flex-col flex-grow justify-evenly">
+        <p className="m-8 h-full w-[90%] overflow-y-scroll">
+          {story_has_no_choices ? currentNodeData.prompt?.content : story}
+        </p>
+        <form className={`w-3/4 flex flex-col h-full pb-4 justify-end`}>
+          <div
+            className={`border-black border-2 border-dotted rounded-md overflow-hidden mb-4 flex flex-col flex-grow justify-evenly ${story_has_no_choices ? "hidden appearance-none" : ""}`}
+          >
             {options.map((option: any, index: any) => {
               const str = index.toString();
               return (
@@ -264,7 +271,7 @@ export default async function Page({
             </Link>
             <button
               type="submit"
-              className="bg-white text-black px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0"
+              className={`bg-white text-black px-4 py-2 rounded-full shadow-black shadow-sm r-0 b-0 ${story_has_no_choices ? "hidden appearance-none" : ""}`}
               formAction={createNextNode}
             >
               Continue
