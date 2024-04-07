@@ -9,9 +9,14 @@ import {
   Node,
   NodeCreateInput,
 } from "neurelo-sdk";
-import { promptMixtralChain, promptSDXL } from "@/app/data/fireworks";
+import {
+  promptMixtralChain,
+  promptSDXL,
+  summarize,
+} from "@/app/data/fireworks";
 import { ObjectId } from "bson";
 import { getSignedUploadUrl } from "@/app/data/neurelo";
+import { scanOptions } from "@/app/data/utils";
 
 // TODO
 export default async function Page({
@@ -20,108 +25,160 @@ export default async function Page({
   params: { story: string; node: string };
 }) {
   // so we are currently filling out a node that has its prompt already filled in, it needs the user input tho
-  const storyId = params.story;
-  const nodeId = params.node;
-  const story = await StoryApiService.findStoryById(storyId);
-  const storyData = story.data.data;
-  const currentNode = await NodeApiService.findNodeById(nodeId, {
+  const currentNode = await NodeApiService.findNodeById(params.node, {
     $scalars: true,
     prompt: true,
     user_input: true,
   });
   const currentNodeData = currentNode.data.data;
-  const currentNodeJSON = JSON.parse(
+
+  // process the current prompt into options to display to the user
+
+  // uses form input to create the next node
+  const { options, index } = scanOptions(
     currentNodeData.prompt?.content || "failed",
   );
-
-  // gather all past messages
-  const messages: Message[] = [];
-  var node = await NodeApiService.findNodeById(
-    storyData.starting_node || "failed",
-    {
-      $scalars: true,
-      prompt: true,
-      user_input: true,
-    },
-  );
-  console.log(node);
-  while (
-    node.data.data.children !== undefined &&
-    node.data.data.children.length > 0
-  ) {
-    messages.push(
-      node.data.data.prompt as Message,
-      node.data.data.user_input as Message,
-    );
-    const nextNodeId = node.data.data.children[0];
-    node = await NodeApiService.findNodeById(nextNodeId || "failed", {
-      $scalars: true,
-      prompt: true,
-      user_input: true,
-    });
-  }
-  console.log(messages);
-  // process the current prompt into options
-  const options =
-    JSON.parse(currentNodeData.prompt?.content || "failed").options || "failed";
-
+  const story = currentNodeData.prompt?.content?.substring(0, index - 1);
   const createNextNode = async (formData: FormData) => {
     "use server";
-    const user_choice = options[Number(formData.get("option")) || 0];
-    messages.push({
+    const storyId = params.story;
+    const story = await StoryApiService.findStoryById(storyId);
+    const storyData = story.data.data;
+    const userFormChoice = {
       role: "user",
-      content: user_choice,
+      content: options[Number(formData.get("option")) || 0],
+    };
+
+    var messages: Message[] = [];
+    // gather current prompt and user input into messages
+    const currentNode = await NodeApiService.findNodeById(params.node, {
+      $scalars: true,
+      prompt: true,
+      user_input: true,
     });
+    // gather all past messages in past nodes
+    const currentNodeData = currentNode.data.data;
+
+    var node = await NodeApiService.findNodeById(
+      storyData.starting_node || "failed",
+      {
+        $scalars: true,
+        prompt: true,
+        user_input: true,
+      },
+    ).then((res) => res.data.data);
+
+    while (node.id !== currentNodeData.id) {
+      messages.push(node.prompt as Message, node.user_input as Message);
+      node = await NodeApiService.findNodeById(node.children[0] || "failed", {
+        $scalars: true,
+        prompt: true,
+        user_input: true,
+      }).then((res) => res.data.data);
+    }
+    messages.push(currentNodeData.prompt as Message, userFormChoice);
+
+    //// SUMMARIZATION
+    // var previousText = "";
+    // while (node.id !== currentNodeData.id) {
+    //   node = await NodeApiService.findNodeById(params.node, {
+    //     $scalars: true,
+    //     prompt: true,
+    //     user_input: true,
+    //   }).then((res) => res.data.data);
+    //   previousText += "Storyteller: " + node.prompt?.content;
+    //   previousText += "User: " + node.user_input?.content;
+    // }
+    //
+    // const summary = await summarize(previousText);
+    // const messages = [
+    //   {
+    //     role: "system",
+    //     content: `You are an infinite storytelling bot. Continue the story for the user by introducing a conflict or decision for the user to resolve. Respond in the JSON format: { "story": "string-here", options: [ "option1", "option2", "option3" ] }.`,
+    //   },
+    //   {
+    //     role: "user",
+    //     content: `This is a summary of what's happened so far: ${summary}. Remember to respond to me in the JSON format: { "story": "string-here", options: [ "option1", "option2", "option3" ] }.`,
+    //   },
+    // ];
+    // console.log({ messages: messages });
+    //
+    // await promptMixtralChain(messages);
+    // const story_continuation = messages[messages.length - 1];
+
+    // gather all past messages in past nodes
+    // const node = await NodeApiService.findNodeById(storyData.starting_node, {
+    //   $scalars: true,
+    //   prompt: true,
+    //   user_input: true,
+    // }).then((res) => res.data.data);
+    // while (node.id !== currentNodeData.id) {
+    //   messages.push();
+    // }
+    //
+    // console.log({ currentNode: node });
+    //
+    // const currentNodeJSON = JSON.parse(
+    //   currentNodeData.prompt?.content || "failed",
+    // );
+    // messages.push({
+    //   role: "assistant",
+    //   content: currentNodeJSON.story,
+    // });
+    // messages.push(userFormChoice);
+
     await promptMixtralChain(messages);
+    console.log({ messages: messages });
+
+    // create next node
     const newNode: Node = {
       children: [],
       parent_node: currentNodeData.id || "failed",
       id: new ObjectId().toHexString(),
-      user_input: {
-        role: "user",
-        content: options[Number(user_choice)],
-      },
+      user_input: userFormChoice,
       prompt: messages[messages.length - 1],
     };
 
-    const base64 = await promptSDXL(`Generate an image for this story: ${newNode.prompt?.content}`)
-    
+    const base64 = await promptSDXL(
+      `Generate an image for this story: ${newNode.prompt?.content}`,
+    );
+
     // converting Base64 to blob
-    function getFileFromBase64(string64:string) {
-      const trimmedString = string64.replace('data:image/png;base64', '');
-      const imageContent = Buffer.from(trimmedString, 'base64');
+    function getFileFromBase64(string64: string) {
+      const trimmedString = string64.replace("data:image/png;base64", "");
+      const imageContent = Buffer.from(trimmedString, "base64");
       const view = new Uint8Array(imageContent);
-    
-      const type = 'image/png';
+
+      const type = "image/png";
 
       const blob = new Blob([view], { type });
 
-      return blob
-  }
+      return blob;
+    }
 
-  const imageBlob = getFileFromBase64(base64)
-  const filepath = `${newNode.id}.png`
-  const presigned = await getSignedUploadUrl(filepath)
+    const imageBlob = getFileFromBase64(base64);
+    const filepath = `${newNode.id}.png`;
+    const presigned = await getSignedUploadUrl(filepath);
 
-  const form_data = new FormData();
-  Object.keys(presigned.fields).forEach(key => {
-    formData.append(key, presigned.fields[key]);
-  });
-  // Actual file has to be appended last.
-  formData.append("file", imageBlob);
+    const form_data = new FormData();
+    Object.keys(presigned.fields).forEach((key) => {
+      form_data.append(key, presigned.fields[key]);
+    });
+    // Actual file has to be appended last.
+    form_data.append("file", imageBlob);
 
-  // sending to s3 bucket 
-  await fetch(presigned.url, {
-      method: 'POST',
-      body:form_data,
+    // sending to s3 bucket
+    await fetch(presigned.url, {
+      method: "POST",
+      body: form_data,
       // mode: 'no-cors',
       // headers: {
       //     'Content-Type': 'multipart/form-data'
       // }
-  })
+    });
+    console.log(form_data);
 
-
-    newNode.image_source = filepath
+    newNode.image_source = `https://sfhacksbucketstoryteller.s3.us-west-1.amazonaws.com/${filepath}`;
 
     // create the new node so we can navigate to it
     await NodeApiService.createOneNode(newNode as NodeCreateInput, {
@@ -129,7 +186,7 @@ export default async function Page({
       prompt: true,
       user_input: true,
     });
-    // update the old one's children so we can get all the messages
+    // update the old one's children so we can get all the messages when we loop through in the future
     await NodeApiService.updateNodeById(
       currentNodeData.id || "failed",
       {
@@ -150,7 +207,10 @@ export default async function Page({
       <div className="w-3/4">
         <Image
           // TODO: add image src, maybe modify the gradient as well
-          src="https://placekitten.com/200/300"
+          src={
+            currentNodeData.image_source ||
+            "https://via.placeholder.com/900x600"
+          }
           alt="placeholder"
           className="relative object-cover h-full w-full right-0"
           style={{
@@ -166,7 +226,7 @@ export default async function Page({
       </div>
       <div className="fixed w-1/3 h-full flex flex-col items-center text-black right-0 justify-between">
         {/* make a form with radio buttons for each option */}
-        <p className="m-8 h-full overflow-y-clip">{currentNodeJSON.story}</p>
+        <p className="m-8 h-full overflow-y-clip">{story}</p>
         <form className="w-3/4 flex flex-col h-full pb-4 justify-end">
           <div className="border-black border-2 border-dotted rounded-md overflow-hidden mb-4 flex flex-col flex-grow justify-evenly">
             {options.map((option: any, index: any) => {

@@ -22,8 +22,8 @@ export const promptMixtral = async (
           content: prompt,
         },
       ],
-      max_tokens: 4096,
-      temperature: 1,
+      max_tokens: 1024,
+      temperature: 0.5,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
@@ -57,16 +57,19 @@ export const promptMixtralChain = async (messages: Message[]) => {
     data: {
       model: "accounts/fireworks/models/mixtral-8x7b-instruct",
       messages: messages,
-      max_tokens: 4096,
-      temperature: 1,
+      max_tokens: 2048,
+      temperature: 0.5,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
+      echo: false,
       n: 1,
       stop: null,
-      response_format: { type: "text" },
-      stream: false,
+      response_format: {
+        type: "text",
+      },
     },
+    stream: false,
   };
 
   var response_message;
@@ -95,4 +98,29 @@ export async function promptSDXL(description: string): Promise<string> {
     },
   );
   return await response.json().then((data) => data[0].base64);
+}
+
+export async function summarize(text: string) {
+  const response = await fetch(
+    "https://api.fireworks.ai/inference/v1/completions",
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.FIREWORKS_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "accounts/fireworks/models/mixtral-8x7b-instruct",
+        max_tokens: 4096,
+        top_p: 1,
+        top_k: 40,
+        presence_penalty: 0,
+        frequency_penalty: 0,
+        temperature: 0.1,
+        prompt: `Summarize the following text in less than 7 sentences with a JSON object with a summary. ${text}`,
+      }),
+    },
+  );
+  return await response.json().then((res) => res.choices[0].text);
 }
