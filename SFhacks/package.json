@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.550.0",
+    "@aws-sdk/s3-presigned-post": "^3.550.0",
     "bson": "^6.6.0",
     "mongodb": "^6.5.0",
     "neurelo-sdk": "file:neurelo-sdk-typescript-cmt_4acbf5.tgz",

@@ -1,4 +1,5 @@
-import { ObjectId } from "mongodb";
+'use server'
+
 import {
   GlobalApiService,
   StoryApiService,
@@ -7,9 +8,21 @@ import {
   Avatar,
 } from "neurelo-sdk";
 
-function id() {
-  return new ObjectId().toHexString();
+import { S3Client } from '@aws-sdk/client-s3'
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
+
+
+export const getSignedUploadUrl = async (filepath : string) => {
+    const client = new S3Client({ region: "us-west-1" });
+    const Bucket = 'sfhacksbucketstoryteller'
+    return createPresignedPost(client, {
+      Bucket,
+      Key: filepath,
+      Expires: 600,
+    })
 }
+
+
 export const fetchAvatars = async () => {
   try {
     const res = await AvatarApiService.findAvatar(undefined);
@@ -18,6 +31,48 @@ export const fetchAvatars = async () => {
     return { data: [] as Avatar[], error: error };
   }
 };
+
+export const fetchAvatar = async (name: string) => {
+
+  try {
+    const res = await AvatarApiService.findAvatarByName(name)
+    return { data: res.data?.data, error: undefined };
+  } catch (error) {
+    return { data: {} as Avatar, error: error}
+  }
+}
+
+export const createAvatar = async (avatar: Avatar) => {
+  try {
+    const res = await AvatarApiService.createOneAvatar( { pronouns: avatar.pronouns || "",
+    weaknesses: avatar.weaknesses || "",
+    strengths: avatar.strengths || "",
+    skills: avatar.skills || "",
+    dislikes: avatar.dislikes || "",
+    likes: avatar.likes || "",
+    name: avatar.name || "",
+    image_source: avatar.image_source || "" });
+  } catch (error) {
+    return { data: undefined, error: error};
+  }
+}
+
+export const updateAvatar = async (avatar: Avatar, name : string) => {
+  console.log("update called again")
+  console.log(avatar)
+  try {
+    const res = await AvatarApiService.updateAvatarByName(name || "Steven", { pronouns: avatar.pronouns || "",
+    weaknesses: avatar.weaknesses || "",
+    strengths: avatar.strengths || "",
+    skills: avatar.skills || "",
+    dislikes: avatar.dislikes || "",
+    likes: avatar.likes || "",
+    name: avatar.name || "",
+    image_source: avatar.image_source || "" })
+  } catch (error) {
+    return { data: undefined, error: error};
+  }
+}
 
 export const fetchGlobal = async () => {
   try {
