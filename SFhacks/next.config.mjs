@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+
   images: {
     remotePatterns: [
       {
@@ -20,6 +21,10 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+      { protocol: "https",
+      hostname: "sfhacksbucketstoryteller.s3.us-west-1.amazonaws.com",
+      port: "",
+      pathname: "/**",}
     ],
     domains: ["images.unsplash.com"],
   },
