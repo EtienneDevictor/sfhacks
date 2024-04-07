@@ -9,6 +9,9 @@ export default async function Stories() {
 
   const nodes = await Promise.all(
     data.map(async (story) => {
+      // if (story.title === "Title") {
+      //
+      // }
       const node = await NodeApiService.findNodeById(
         story.starting_node || "failed",
         {

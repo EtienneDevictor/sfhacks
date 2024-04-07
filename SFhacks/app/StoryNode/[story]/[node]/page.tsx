@@ -226,7 +226,7 @@ export default async function Page({
       </div>
       <div className="fixed w-1/3 h-full flex flex-col items-center text-black right-0 justify-between">
         {/* make a form with radio buttons for each option */}
-        <p className="m-8 h-full overflow-y-clip">{story}</p>
+        <p className="m-8 h-full overflow-y-scroll">{story}</p>
         <form className="w-3/4 flex flex-col h-full pb-4 justify-end">
           <div className="border-black border-2 border-dotted rounded-md overflow-hidden mb-4 flex flex-col flex-grow justify-evenly">
             {options.map((option: any, index: any) => {
