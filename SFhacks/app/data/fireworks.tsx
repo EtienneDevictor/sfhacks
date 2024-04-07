@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Message } from "neurelo-sdk";
+import { Node, Message } from "neurelo-sdk";
 export const promptMixtral = async (
   prompt: string,
   fallback_response: string = "",
@@ -119,6 +119,31 @@ export async function summarize(text: string) {
         frequency_penalty: 0,
         temperature: 0.1,
         prompt: `Summarize the following text in less than 7 sentences with a JSON object with a summary. ${text}`,
+      }),
+    },
+  );
+  return await response.json().then((res) => res.choices[0].text);
+}
+
+export async function summarizeNode(node: Node) {
+  const response = await fetch(
+    "https://api.fireworks.ai/inference/v1/completions",
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.FIREWORKS_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "accounts/fireworks/models/mixtral-8x7b-instruct",
+        max_tokens: 512,
+        top_p: 1,
+        top_k: 40,
+        presence_penalty: 0,
+        frequency_penalty: 0,
+        temperature: 0.1,
+        prompt: `Give a short title for the following text: ${node.prompt?.content}`,
       }),
     },
   );
